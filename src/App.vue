@@ -166,12 +166,31 @@ async function startCamera() {
   if (currentMode.value.autoDetect) startAutoDetect()
 }
 
-function captureBase64(video, maxW = 960) {
+function captureBase64(video, maxW) {
+  // 标签/通用类用更小分辨率(够看清文字即可),产品质检保留细节
+  if (maxW == null) maxW = currentMode.value.id === 'product' ? 1024 : 768
   let w = video.videoWidth, h = video.videoHeight
   if (w > maxW) { h = Math.round(h * maxW / w); w = maxW }
   const c = document.createElement('canvas')
   c.width = w; c.height = h
-  c.getContext('2d').drawImage(video, 0, 0, w, h)
+  const ctx = c.getContext('2d')
+  ctx.drawImage(video, 0, 0, w, h)
+
+  // 运单/通用模式:灰度 + 提高对比度,让条码与文字更锐利(不需要颜色)
+  if (currentMode.value.id !== 'product') {
+    const img = ctx.getImageData(0, 0, w, h)
+    const d = img.data
+    const contrast = 1.4                       // 对比度系数
+    const intercept = 128 * (1 - contrast)
+    for (let i = 0; i < d.length; i += 4) {
+      const gray = d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114
+      let v = contrast * gray + intercept
+      v = v < 0 ? 0 : v > 255 ? 255 : v
+      d[i] = d[i + 1] = d[i + 2] = v
+    }
+    ctx.putImageData(img, 0, 0)
+  }
+
   const url = c.toDataURL('image/jpeg', 0.82)
   return { url, base64: url.split(',')[1] }
 }
@@ -269,7 +288,11 @@ async function analyzeImages(photos) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [...imgParts, { text: currentMode.value.prompt }] }],
-        generationConfig: { temperature: 0.1 }
+        generationConfig: {
+          temperature: 0.1,
+          thinkingConfig: { thinkingBudget: 0 },   // 关闭内部推理,大幅降低延迟
+          maxOutputTokens: 1200                     // 限制输出长度
+        }
       })
     })
     if (!resp.ok) throw new Error(`API ${resp.status}: ${(await resp.text()).slice(0, 300)}`)
