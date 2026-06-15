@@ -1,7 +1,7 @@
 # AI 质检助手 / PackageRead
 
 A Vue 3 + ASP.NET Core app that uses **Gemini 2.5 Flash** streaming to analyze shipping labels and product photos in real time — designed for production-line workers.
-<img width="3006" height="1125" alt="image" src="https://github.com/user-attachments/assets/069dc8f3-b992-42d2-ae8b-3b899b1e00e7" />
+
 
 
 ## Features
