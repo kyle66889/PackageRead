@@ -6,3 +6,6 @@ dist
 # C# build artifacts
 **/bin/
 **/obj/
+
+# C# backend secrets
+PackageReadApi/appsettings.Development.json
