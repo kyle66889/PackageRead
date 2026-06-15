@@ -23,6 +23,24 @@ public class GeminiServiceTests
         Assert.Equal("abc123", result.Photos[0]);
     }
 
+    [Theory]
+    [InlineData("shipping", "tracking")]
+    [InlineData("product", "professional product inspector")]
+    [InlineData("general", "key information")]
+    public void GetPromptForMode_ReturnsCorrectPrompt(string mode, string expectedKeyword)
+    {
+        var service = BuildService();
+        var prompt = service.GetPromptForMode(mode);
+        Assert.Contains(expectedKeyword, prompt, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void GetPromptForMode_ThrowsOnUnknownMode()
+    {
+        var service = BuildService();
+        Assert.Throws<ArgumentException>(() => service.GetPromptForMode("unknown"));
+    }
+
     // ── helpers shared by later tests ────────────────────────────────────────
 
     internal static GeminiService BuildService(HttpMessageHandler? handler = null)
