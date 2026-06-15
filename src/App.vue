@@ -1,9 +1,6 @@
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY
-const MODEL   = 'gemini-2.5-flash'
-
 // ── Mode configs ───────────────────────────────────────────────────────────
 const MODES = [
   {
@@ -278,21 +275,16 @@ function beginAnalysis(photos) {
   analyzeImages(photos)
 }
 
-// ── Gemini streaming ───────────────────────────────────────────────────────
+// ── Backend proxy streaming ────────────────────────────────────────────────
 async function analyzeImages(photos) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:streamGenerateContent?alt=sse&key=${API_KEY}`
-  const imgParts = photos.map(p => ({ inline_data: { mime_type: 'image/jpeg', data: p.base64 } }))
+  const url = 'http://localhost:5000/api/analyze'
   try {
     const resp = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ parts: [...imgParts, { text: currentMode.value.prompt }] }],
-        generationConfig: {
-          temperature: 0.1,
-          thinkingConfig: { thinkingBudget: 0 },   // 关闭内部推理,大幅降低延迟
-          maxOutputTokens: 1200                     // 限制输出长度
-        }
+        mode: modeId.value,
+        photos: photos.map(p => p.base64)
       })
     })
     if (!resp.ok) throw new Error(`API ${resp.status}: ${(await resp.text()).slice(0, 300)}`)
@@ -356,7 +348,6 @@ onUnmounted(() => { stopAutoDetect(); stopCamera() })
           {{ m.icon }} {{ m.label }}
         </button>
       </div>
-      <span class="model-tag">{{ MODEL }}</span>
     </header>
 
     <!-- ── Main ── -->
@@ -552,7 +543,6 @@ onUnmounted(() => { stopAutoDetect(); stopCamera() })
 }
 .mode-tab:hover { border-color: rgba(0,212,255,0.3); color: #c0c8e8; }
 .mode-tab.active { background: rgba(0,212,255,0.1); border-color: rgba(0,212,255,0.4); color: #00d4ff; font-weight: 600; }
-.model-tag { font-size: 11px; color: #3d4260; font-family: monospace; flex-shrink: 0; }
 
 /* ─── Main grid ───────────────────────────────────────────────────────────── */
 .main-grid { flex: 1; display: grid; grid-template-columns: minmax(280px, 42%) 1fr; min-height: 0; overflow: hidden; }
