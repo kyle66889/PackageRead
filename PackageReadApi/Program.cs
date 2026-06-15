@@ -5,12 +5,11 @@ using PackageReadApi.Models;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<GeminiConfig>(builder.Configuration.GetSection("Gemini"));
-builder.Services.AddHttpClient<GeminiService>(client =>
+builder.Services.AddHttpClient<IGeminiService, GeminiService>(client =>
 {
     client.BaseAddress = new Uri("https://generativelanguage.googleapis.com/");
     client.Timeout = TimeSpan.FromMinutes(3);
 });
-builder.Services.AddScoped<IGeminiService, GeminiService>();
 builder.Services.AddCors(options =>
     options.AddDefaultPolicy(p =>
         p.WithOrigins(
