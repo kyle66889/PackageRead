@@ -302,7 +302,9 @@ async function analyzeImages(photos) {
         const raw = line.slice(6).trim()
         if (!raw || raw === '[DONE]') continue
         try {
-          const t = JSON.parse(raw).candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+          const parsed = JSON.parse(raw)
+          if (parsed.error) { errorMsg.value = parsed.error; break }
+          const t = parsed.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
           if (t) { full += t; streamText.value = full }
         } catch { /* skip */ }
       }
