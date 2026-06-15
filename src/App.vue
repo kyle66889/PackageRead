@@ -462,7 +462,8 @@ onUnmounted(() => { stopAutoDetect(); stopCamera() })
               <span v-if="isMulti"> · {{ capturedPhotos.length }} 张图片</span>
             </span>
           </div>
-          <pre class="stream-body">{{ streamText || '正在连接…' }}<span v-if="streamText" class="cursor">▊</span></pre>
+          <div v-if="errorMsg" class="alert" style="margin: 0 14px 10px">{{ errorMsg }}</div>
+          <pre class="stream-body">{{ streamText || (errorMsg ? '' : '正在连接…') }}<span v-if="streamText" class="cursor">▊</span></pre>
         </div>
 
         <!-- result -->
