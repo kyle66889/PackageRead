@@ -52,15 +52,9 @@ npm install
 
 ### 3. Add API Key
 
-Create a `.env` file in the project root:
+API Key 已配置在 `.env`（前端）和 `PackageReadApi/appsettings.json`（后端）中，克隆后即可使用。
 
-```
-VITE_GEMINI_API_KEY=your_gemini_api_key_here
-```
-
-Get a free key at [Google AI Studio](https://aistudio.google.com/apikey).
-
-> **Note:** `.env` is in `.gitignore` — your key is never committed.
+Get a free key at [Google AI Studio](https://aistudio.google.com/apikey) if you need to replace it.
 
 ### 4. Run
 
@@ -91,7 +85,7 @@ src/
   main.js       # Vue mount
 index.html
 vite.config.js
-.env            # VITE_GEMINI_API_KEY (not committed)
+.env            # VITE_GEMINI_API_KEY
 ```
 
 ## Free Tier Limits

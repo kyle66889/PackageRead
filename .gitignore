@@ -1,11 +1,6 @@
 node_modules
 dist
-.env
-.env.local
 
 # C# build artifacts
 **/bin/
 **/obj/
-
-# C# backend secrets
-PackageReadApi/appsettings.Development.json
