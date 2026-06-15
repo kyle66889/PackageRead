@@ -303,7 +303,7 @@ async function analyzeImages(photos) {
         if (!raw || raw === '[DONE]') continue
         try {
           const parsed = JSON.parse(raw)
-          if (parsed.error) { errorMsg.value = parsed.error; break }
+          if (parsed.error) { errorMsg.value = parsed.error; return }
           const t = parsed.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
           if (t) { full += t; streamText.value = full }
         } catch { /* skip */ }
@@ -511,6 +511,10 @@ onUnmounted(() => { stopAutoDetect(); stopCamera() })
           <div v-else-if="streamText" class="raw-panel">
             <span class="field-label">原始返回</span>
             <pre class="raw-text">{{ streamText }}</pre>
+          </div>
+
+          <div v-else-if="!errorMsg" class="right-placeholder" style="padding: 20px">
+            <p class="placeholder-sub">未识别到结果，请重试</p>
           </div>
         </div>
 

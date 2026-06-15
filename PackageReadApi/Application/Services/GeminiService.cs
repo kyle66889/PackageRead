@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.Extensions.Options;
 using PackageReadApi.Models;
@@ -116,7 +117,7 @@ public class GeminiService : IGeminiService
         }
         catch (Exception ex)
         {
-            await response.WriteAsync($"data: {{\"error\":\"{ex.Message}\"}}\n\n", ct);
+            await WriteErrorAsync(response, ex.Message, ct);
             return;
         }
 
@@ -124,7 +125,7 @@ public class GeminiService : IGeminiService
         {
             var err = await httpResp.Content.ReadAsStringAsync(ct);
             var snippet = err.Length > 300 ? err[..300] : err;
-            await response.WriteAsync($"data: {{\"error\":\"API {(int)httpResp.StatusCode}: {snippet}\"}}\n\n", ct);
+            await WriteErrorAsync(response, $"API {(int)httpResp.StatusCode}: {snippet}", ct);
             return;
         }
 
@@ -137,5 +138,11 @@ public class GeminiService : IGeminiService
             await response.WriteAsync(line + "\n", ct);
             await response.Body.FlushAsync(ct);
         }
+    }
+
+    private static async Task WriteErrorAsync(HttpResponse response, string message, CancellationToken ct)
+    {
+        var payload = JsonSerializer.Serialize(new { error = message });
+        await response.WriteAsync($"data: {payload}\n\n", ct);
     }
 }
