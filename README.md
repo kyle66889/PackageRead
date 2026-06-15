@@ -1,6 +1,6 @@
 # AI 质检助手 / PackageRead
 
-A Vue 3 web app that uses **Gemini 2.5 Flash** streaming to analyze shipping labels and product photos in real time — designed for production-line workers.
+A Vue 3 + ASP.NET Core app that uses **Gemini 2.5 Flash** streaming to analyze shipping labels and product photos in real time — designed for production-line workers.
 
 ![screenshot](https://github.com/kyle66889/PackageRead/raw/main/docs/screenshot.png)
 
@@ -21,18 +21,30 @@ A Vue 3 web app that uses **Gemini 2.5 Flash** streaming to analyze shipping lab
 - Extracts: title, type, visible text content, key info
 
 ### Real-time Streaming
-- Uses `streamGenerateContent?alt=sse` — tokens stream to the UI as they arrive
+- Tokens stream to the UI as they arrive via SSE
 - Live green monospace stream display while analyzing
 - Snaps into a structured result card on completion
+
+## Architecture
+
+```
+Browser (Vue 3 · localhost:3000)
+    ↕ POST /api/analyze (JSON + base64 photos)
+ASP.NET Core Minimal API (localhost:5000)
+    ↕ streamGenerateContent?alt=sse
+Google Gemini 2.5 Flash
+```
+
+The API key lives only on the server — never shipped to the browser.
 
 ## Tech Stack
 
 | | |
 |---|---|
-| Framework | Vue 3 + Composition API |
-| Build | Vite 5 |
+| Frontend | Vue 3 + Composition API, Vite 5 |
+| Backend | ASP.NET Core 8 Minimal API (C#) |
 | AI | Google Gemini 2.5 Flash (`gemini-2.5-flash`) |
-| Streaming | Gemini SSE (`streamGenerateContent?alt=sse`) |
+| Streaming | Gemini SSE transparently proxied to browser |
 | Camera | `navigator.mediaDevices.getUserMedia` |
 
 ## Getting Started
@@ -44,7 +56,7 @@ git clone https://github.com/kyle66889/PackageRead.git
 cd PackageRead
 ```
 
-### 2. Install
+### 2. Install frontend dependencies
 
 ```bash
 npm install
@@ -52,11 +64,30 @@ npm install
 
 ### 3. Add API Key
 
-API Key 已配置在 `.env`（前端）和 `PackageReadApi/appsettings.json`（后端）中，克隆后即可使用。
+Create `PackageReadApi/appsettings.Development.json` (gitignored — never committed):
 
-Get a free key at [Google AI Studio](https://aistudio.google.com/apikey) if you need to replace it.
+```json
+{
+  "Gemini": {
+    "ApiKey": "your_gemini_api_key_here"
+  }
+}
+```
 
-### 4. Run
+Get a free key at [Google AI Studio](https://aistudio.google.com/apikey).
+
+### 4. Start the backend
+
+```bash
+cd PackageReadApi
+dotnet run
+```
+
+Confirm you see: `Now listening on: http://localhost:5000`
+
+### 5. Start the frontend
+
+In a separate terminal:
 
 ```bash
 npm run dev
@@ -80,12 +111,19 @@ Open [http://localhost:3000](http://localhost:3000) in your browser. Grant camer
 ## Project Structure
 
 ```
+PackageReadApi/                         # C# backend
+  Program.cs                            # DI + CORS + routing
+  Endpoints/AnalyzeEndpoints.cs         # POST /api/analyze
+  Application/Services/GeminiService.cs # Gemini SSE proxy
+  Models/                               # AnalyzeRequest, GeminiConfig
+  appsettings.json                      # config skeleton (no key)
+  appsettings.Development.json          # API key (gitignored)
+
+PackageReadApi.Tests/                   # xUnit tests (10 tests)
+
 src/
-  App.vue       # entire app (single-file component)
-  main.js       # Vue mount
-index.html
-vite.config.js
-.env            # VITE_GEMINI_API_KEY
+  App.vue                               # entire frontend (single-file component)
+  main.js                               # Vue mount
 ```
 
 ## Free Tier Limits
