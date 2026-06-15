@@ -41,6 +41,43 @@ public class GeminiServiceTests
         Assert.Throws<ArgumentException>(() => service.GetPromptForMode("unknown"));
     }
 
+    [Fact]
+    public async Task StreamAnalyzeAsync_ForwardsGeminiSseLines()
+    {
+        var sseBody = "data: {\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"hello\"}]}}]}\n\ndata: [DONE]\n\n";
+        var service = BuildService(new OkSseHandler(sseBody));
+
+        var context = new DefaultHttpContext();
+        var body = new MemoryStream();
+        context.Response.Body = body;
+
+        var request = new AnalyzeRequest("shipping", new List<string> { "base64data" });
+        await service.StreamAnalyzeAsync(request, context.Response, CancellationToken.None);
+
+        body.Seek(0, SeekOrigin.Begin);
+        var result = await new StreamReader(body).ReadToEndAsync();
+        Assert.Contains("data:", result);
+        Assert.Equal("text/event-stream", context.Response.ContentType);
+    }
+
+    [Fact]
+    public async Task StreamAnalyzeAsync_WritesErrorOnNonSuccess()
+    {
+        var service = BuildService(new ErrorHandler(HttpStatusCode.TooManyRequests, "rate limit exceeded"));
+
+        var context = new DefaultHttpContext();
+        var body = new MemoryStream();
+        context.Response.Body = body;
+
+        var request = new AnalyzeRequest("shipping", new List<string> { "base64data" });
+        await service.StreamAnalyzeAsync(request, context.Response, CancellationToken.None);
+
+        body.Seek(0, SeekOrigin.Begin);
+        var result = await new StreamReader(body).ReadToEndAsync();
+        Assert.Contains("error", result);
+        Assert.Contains("429", result);
+    }
+
     // ── helpers shared by later tests ────────────────────────────────────────
 
     internal static GeminiService BuildService(HttpMessageHandler? handler = null)
